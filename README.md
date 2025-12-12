@@ -1,1 +1,1 @@
-# flask_crud_CS
+This README documents the Flask CRUD API project with MySQL, including setup instructions, API usage examples, and testing procedures. It covers CRUD operations, JWT authentication, search functionality, and JSON/XML output formatting.
