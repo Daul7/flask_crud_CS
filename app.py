@@ -103,13 +103,24 @@ def login():
     return jsonify({'error': 'Invalid password'}), 401
 
 # --- CRUD ROUTES ---
-
-# CREATE & GET ALL
-@app.route('/company', methods=['GET', 'POST'], strict_slashes=False)
+# CREATE, GET ALL, DELETE by query
+@app.route('/company', methods=['GET', 'POST', 'DELETE'], strict_slashes=False)
 @token_required
 def companies():
     fmt = request.args.get('format', 'json')
 
+    # DELETE via query ?id=
+    if request.method == 'DELETE':
+        company_id = request.args.get('id')
+        if not company_id:
+            return format_response({'error': 'Company id is required'}, fmt), 400
+        cursor = mysql.connection.cursor()
+        cursor.execute("DELETE FROM company WHERE id=%s", (company_id,))
+        mysql.connection.commit()
+        cursor.close()
+        return format_response({'message': f'Company {company_id} deleted'}, fmt)
+
+    # CREATE
     if request.method == 'POST':
         data = request.get_json()
         honda = data.get('HONDA')
@@ -135,7 +146,7 @@ def companies():
             cursor.close()
             return format_response({'error': str(e)}, fmt), 500
 
-    # GET all with optional search across all brands
+    # GET with optional search
     search = request.args.get('search')
     cursor = mysql.connection.cursor()
     if search:
@@ -155,7 +166,7 @@ def companies():
     cursor.close()
     return format_response(companies, fmt)
 
-# GET SINGLE, UPDATE, DELETE
+# GET SINGLE, UPDATE, DELETE by ID
 @app.route('/company/<int:company_id>', methods=['GET', 'PUT', 'DELETE'], strict_slashes=False)
 @token_required
 def company_operations(company_id):
@@ -197,7 +208,7 @@ def company_operations(company_id):
         cursor.execute("DELETE FROM company WHERE id=%s", (company_id,))
         mysql.connection.commit()
         cursor.close()
-        return format_response({'message': 'Company deleted'}, fmt)
+        return format_response({'message': f'Company {company_id} deleted'}, fmt)
 
 # Home
 @app.route('/')
